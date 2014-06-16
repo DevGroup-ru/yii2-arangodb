@@ -44,7 +44,11 @@ class ArangoModel extends \yii\base\model {
             // добавляем запись
             $this->_doc = Document::createFromArray($this->getAttributes());
 
-            return intval(Yii::$app->arango->documentHandler()->add(static::class_to_collection(get_called_class()), $this->_doc)) > 0;
+            $result = intval(Yii::$app->arango->documentHandler()->add(static::class_to_collection(get_called_class()), $this->_doc)) > 0;
+            if ($result) {
+                $this->_isNewRecord = false;
+            }
+            return $result;
         } else {
             // патчим!
             $doc_attributes = array_keys($this->_doc->getAll());

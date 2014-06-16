@@ -7,7 +7,7 @@ use yii\di\Instance;
 
 use triagens\ArangoDb\Document;
 
-use app;
+
 
 class ArangoProvider extends yii\data\ActiveDataProvider
 {
@@ -23,7 +23,7 @@ class ArangoProvider extends yii\data\ActiveDataProvider
     public function init()
     {
         parent::init();
-        $this->arango = Instance::ensure($this->arango, app\components\ArangoDbConnection::className());
+        $this->arango = Instance::ensure($this->arango, \devgroup\arangodb\ArangoDbConnection::className());
         if ($this->collection === null) {
             throw new InvalidConfigException('The "collection" property must be set.');
         }

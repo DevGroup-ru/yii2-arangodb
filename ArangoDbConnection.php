@@ -6,7 +6,7 @@ use yii\helpers\ArrayHelper;
 use yii\base\Object;
 
 // set up some aliases for less typing later
-use triagens\ArangoDb\Connection as ArangoConnection;
+
 use triagens\ArangoDb\ConnectionOptions as ArangoConnectionOptions;
 use triagens\ArangoDb\DocumentHandler as ArangoDocumentHandler;
 
@@ -53,7 +53,7 @@ class ArangoDbConnection extends Object {
     {
         parent::init();
 
-        $this->_connection = new ArangoConnection($this->connectionOptions);
+        $this->_connection = new Connection($this->connectionOptions);
         $this->_collectionHandler = new \triagens\ArangoDb\CollectionHandler($this->_connection);
         $this->_documentHandler = new \triagens\ArangoDb\DocumentHandler($this->_connection);
     }

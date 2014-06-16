@@ -1,6 +1,6 @@
 <?php
 
-namespace bethrezen\arangodb;
+namespace devgroup\arangodb;
 
 use yii;
 

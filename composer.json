@@ -1,5 +1,5 @@
 {
-    "name": "bethrezen/yii2-arangodb",
+    "name": "devgroup/yii2-arangodb",
     "description": "Yii2 arangodb components",
     "type": "yii2-extension",
     "keywords": ["yii2","arangodb"],
@@ -16,7 +16,7 @@
     },
     "autoload": {
         "psr-4": {
-            "bethrezen\\arangodb\\": ""
+            "devgroup\\arangodb\\": ""
         }
     }
 }

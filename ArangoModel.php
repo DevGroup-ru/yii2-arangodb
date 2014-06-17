@@ -13,6 +13,7 @@ class ArangoModel extends \yii\base\model {
 
     private $_doc = null;
 
+    public $_id = null;
 
     public static function findById($id)
     {
@@ -31,6 +32,10 @@ class ArangoModel extends \yii\base\model {
             ->setIsNewRecord(false);
 
         return $model;
+    }
+
+    public function getAttributes($names=null, $except=['_id']){
+        return parent::getAttributes($names, $except);
     }
 
     /**

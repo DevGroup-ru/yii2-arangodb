@@ -7,7 +7,7 @@ use yii;
 
 use triagens\ArangoDb\Document;
 
-class ArangoModel extends \yii\base\model {
+class ArangoModel extends \yii\base\Model {
 
     private $_isNewRecord = true;
 

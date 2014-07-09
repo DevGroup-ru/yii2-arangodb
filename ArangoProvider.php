@@ -85,7 +85,9 @@ class ArangoProvider extends yii\data\ActiveDataProvider
             }
             $result[$item['_key']] = $item;
         }
-        $pagination->totalCount = $cursor->getFullCount();
+        if (is_object($pagination)) {
+            $pagination->totalCount = $cursor->getFullCount();
+        }
         
         return $result;
     }

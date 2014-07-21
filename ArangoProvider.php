@@ -20,6 +20,8 @@ class ArangoProvider extends yii\data\ActiveDataProvider
      */
     public $params = [];
 
+    public $sort = '';
+
     public function init()
     {
         parent::init();
@@ -116,6 +118,11 @@ class ArangoProvider extends yii\data\ActiveDataProvider
         if (count($filter)>0){
             $query .= "\nFILTER ".implode(" && ", $filter)."\n";
         }
+
+        if ($this->sort) {
+            $query .= "\n SORT a." . $this->sort;
+        }
+
         $statement = $this->arango->statement([
             'query' => $query,
             'count' => true,

@@ -8,7 +8,7 @@
 echo "<?php\n";
 ?>
 
-class <?= $className ?> extends \app\components\arangodb\Migration
+class <?= $className ?> extends \devgroup\arangodb\Migration
 {
     public function up()
     {

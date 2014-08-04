@@ -2,6 +2,7 @@
 
 namespace devgroup\arangodb;
 
+use Yii;
 use yii\base\InvalidConfigException;
 use yii\db\ActiveQueryInterface;
 use yii\db\ActiveQueryTrait;
@@ -117,8 +118,17 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     public function all($db = null)
     {
         $statement = $this->createCommand();
-        $cursor = $statement->execute();
-        $rows = $cursor->getAll();
+        $token = $this->getRawAql($statement);
+        Yii::info($token, __METHOD__);
+        try {
+            Yii::beginProfile($token, __METHOD__);
+            $cursor = $statement->execute();
+            $rows = $cursor->getAll();
+            Yii::endProfile($token, __METHOD__);
+        } catch (\Exception $ex) {
+            Yii::endProfile($token, __METHOD__);
+            throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
+        }
         if (!empty($rows)) {
             $models = $this->createModels($rows);
             if (!empty($this->with)) {

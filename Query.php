@@ -11,6 +11,7 @@ use yii\helpers\ArrayHelper;
 use yii\helpers\Json;
 
 use triagens\ArangoDb\Statement;
+use yii\helpers\VarDumper;
 
 class Query extends Component implements QueryInterface
 {
@@ -463,10 +464,42 @@ class Query extends Component implements QueryInterface
         return [$aql, $params];
     }
 
+    /**
+     * @param Statement $statement
+     * @return string
+     */
+    protected static function getRawAql($statement)
+    {
+        $query = $statement->getQuery();
+        $values = $statement->getBindVars();
+
+        $search = [];
+        $replace = [];
+        foreach ($values as $key => $value) {
+            $search[] = "@$key";
+            $replace[] = is_string($value) ? "\"$value\"" : $value;
+        }
+
+        if (count($search)) {
+            $query = str_replace($search, $replace, $query);
+        }
+
+        return $query;
+    }
+
     public function all($db = null)
     {
         $statement = $this->createCommand();
-        $cursor = $statement->execute();
+        $token = $this->getRawAql($statement);
+        Yii::info($token, __METHOD__);
+        try {
+            Yii::beginProfile($token, __METHOD__);
+            $cursor = $statement->execute();
+            Yii::endProfile($token, __METHOD__);
+        } catch (\Exception $ex) {
+            Yii::endProfile($token, __METHOD__);
+            throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
+        }
         return $cursor->getAll();
     }
 
@@ -474,7 +507,16 @@ class Query extends Component implements QueryInterface
     {
         $this->limit(1);
         $statement = $this->createCommand();
-        $cursor = $statement->execute();
+        $token = $this->getRawAql($statement);
+        Yii::info($token, __METHOD__);
+        try {
+            Yii::beginProfile($token, __METHOD__);
+            $cursor = $statement->execute();
+            Yii::endProfile($token, __METHOD__);
+        } catch (\Exception $ex) {
+            Yii::endProfile($token, __METHOD__);
+            throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
+        }
         $result = $cursor->getAll();
         return empty($result) ? false : $result[0];
     }
@@ -500,7 +542,16 @@ class Query extends Component implements QueryInterface
     {
         $statement = $this->createCommand();
         $statement->setCount(true);
-        $cursor = $statement->execute();
+        $token = $this->getRawAql($statement);
+        Yii::info($token, __METHOD__);
+        try {
+            Yii::beginProfile($token, __METHOD__);
+            $cursor = $statement->execute();
+            Yii::endProfile($token, __METHOD__);
+        } catch (\Exception $ex) {
+            Yii::endProfile($token, __METHOD__);
+            throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
+        }
         return $cursor->getCount();
     }
 
@@ -516,29 +567,32 @@ class Query extends Component implements QueryInterface
         return $this;
     }
 
-    public function where($condition)
+    public function where($condition, $params = [])
     {
         $this->where = $condition;
+        $this->addParams($params);
         return $this;
     }
 
-    public function andWhere($condition)
+    public function andWhere($condition, $params = [])
     {
         if ($this->where === null) {
             $this->where = $condition;
         } else {
             $this->where = ['AND', $this->where, $condition];
         }
+        $this->addParams($params);
         return $this;
     }
 
-    public function orWhere($condition)
+    public function orWhere($condition, $params = [])
     {
         if ($this->where === null) {
             $this->where = $condition;
         } else {
             $this->where = ['OR', $this->where, $condition];
         }
+        $this->addParams($params);
         return $this;
     }
 
@@ -746,5 +800,43 @@ class Query extends Component implements QueryInterface
             }
             return $result;
         }
+    }
+
+    /**
+     * Sets the parameters to be bound to the query.
+     * @param array $params list of query parameter values indexed by parameter placeholders.
+     * For example, `[':name' => 'Dan', ':age' => 31]`.
+     * @return static the query object itself
+     * @see addParams()
+     */
+    public function params($params)
+    {
+        $this->params = $params;
+        return $this;
+    }
+
+    /**
+     * Adds additional parameters to be bound to the query.
+     * @param array $params list of query parameter values indexed by parameter placeholders.
+     * For example, `[':name' => 'Dan', ':age' => 31]`.
+     * @return static the query object itself
+     * @see params()
+     */
+    public function addParams($params)
+    {
+        if (!empty($params)) {
+            if (empty($this->params)) {
+                $this->params = $params;
+            } else {
+                foreach ($params as $name => $value) {
+                    if (is_integer($name)) {
+                        $this->params[] = $value;
+                    } else {
+                        $this->params[$name] = $value;
+                    }
+                }
+            }
+        }
+        return $this;
     }
 }

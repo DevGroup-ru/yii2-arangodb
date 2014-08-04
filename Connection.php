@@ -2,6 +2,7 @@
 
 namespace devgroup\arangodb;
 
+use Yii;
 use triagens\ArangoDb\CollectionHandler;
 use triagens\ArangoDb\ConnectionOptions;
 use triagens\ArangoDb\Document;
@@ -46,9 +47,18 @@ class Connection extends Object
     {
         parent::init();
 
-        $this->connection = new ArangoDbConnection($this->connectionOptions);
-        $this->collectionHandler = new CollectionHandler($this->connection);
-        $this->documentHandler = new DocumentHandler($this->connection);
+        $token = 'Opening ArangoDB connection: ' . $this->connectionOptions[ConnectionOptions::OPTION_ENDPOINT];
+        try {
+            Yii::info($token, __METHOD__);
+            Yii::beginProfile($token, __METHOD__);
+            $this->connection = new ArangoDbConnection($this->connectionOptions);
+            $this->collectionHandler = new CollectionHandler($this->connection);
+            $this->documentHandler = new DocumentHandler($this->connection);
+            Yii::endProfile($token, __METHOD__);
+        } catch (\Exception $ex) {
+            Yii::endProfile($token, __METHOD__);
+            throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
+        }
     }
 
     /**

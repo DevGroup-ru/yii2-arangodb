@@ -430,7 +430,7 @@ abstract class ActiveRecord extends BaseActiveRecord
     public function init()
     {
         parent::init();
-        $this->setAttributes($this->defaultValues());
+        $this->setAttributes($this->defaultValues(), false);
     }
 
     public function defaultValues()

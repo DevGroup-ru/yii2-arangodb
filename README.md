@@ -155,3 +155,25 @@ yii arangodb-migrate
 # reverts the last applied migration
 yii arangodb-migrate/down
 ```
+
+
+Using Debug Panel
+-----------------
+
+Add ArangoDb panel to your yii\debug\Module configuration
+
+```php
+return [
+    'bootstrap' => ['debug'],
+    'modules' => [
+        'debug' => 'yii\debug\Module',
+        'panels' => [
+            'arango' => [
+                'class' => 'devgroup\arangodb\panels\arangodb\ArangoDbPanel',
+            ],
+        ],
+        ...
+    ],
+    ...
+];
+```

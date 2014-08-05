@@ -491,13 +491,13 @@ class Query extends Component implements QueryInterface
     {
         $statement = $this->createCommand();
         $token = $this->getRawAql($statement);
-        Yii::info($token, __METHOD__);
+        Yii::info($token, 'devgroup\arangodb\Query::query');
         try {
-            Yii::beginProfile($token, __METHOD__);
+            Yii::beginProfile($token, 'devgroup\arangodb\Query::query');
             $cursor = $statement->execute();
-            Yii::endProfile($token, __METHOD__);
+            Yii::endProfile($token, 'devgroup\arangodb\Query::query');
         } catch (\Exception $ex) {
-            Yii::endProfile($token, __METHOD__);
+            Yii::endProfile($token, 'devgroup\arangodb\Query::query');
             throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
         }
         return $cursor->getAll();
@@ -508,13 +508,13 @@ class Query extends Component implements QueryInterface
         $this->limit(1);
         $statement = $this->createCommand();
         $token = $this->getRawAql($statement);
-        Yii::info($token, __METHOD__);
+        Yii::info($token, 'devgroup\arangodb\Query::query');
         try {
-            Yii::beginProfile($token, __METHOD__);
+            Yii::beginProfile($token, 'devgroup\arangodb\Query::query');
             $cursor = $statement->execute();
-            Yii::endProfile($token, __METHOD__);
+            Yii::endProfile($token, 'devgroup\arangodb\Query::query');
         } catch (\Exception $ex) {
-            Yii::endProfile($token, __METHOD__);
+            Yii::endProfile($token, 'devgroup\arangodb\Query::query');
             throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
         }
         $result = $cursor->getAll();
@@ -543,13 +543,13 @@ class Query extends Component implements QueryInterface
         $statement = $this->createCommand();
         $statement->setCount(true);
         $token = $this->getRawAql($statement);
-        Yii::info($token, __METHOD__);
+        Yii::info($token, 'devgroup\arangodb\Query::query');
         try {
-            Yii::beginProfile($token, __METHOD__);
+            Yii::beginProfile($token, 'devgroup\arangodb\Query::query');
             $cursor = $statement->execute();
-            Yii::endProfile($token, __METHOD__);
+            Yii::endProfile($token, 'devgroup\arangodb\Query::query');
         } catch (\Exception $ex) {
-            Yii::endProfile($token, __METHOD__);
+            Yii::endProfile($token, 'devgroup\arangodb\Query::query');
             throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
         }
         return $cursor->getCount();

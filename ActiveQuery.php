@@ -119,14 +119,14 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     {
         $statement = $this->createCommand();
         $token = $this->getRawAql($statement);
-        Yii::info($token, __METHOD__);
+        Yii::info($token, 'devgroup\arangodb\Query::query');
         try {
-            Yii::beginProfile($token, __METHOD__);
+            Yii::beginProfile($token, 'devgroup\arangodb\Query::query');
             $cursor = $statement->execute();
             $rows = $cursor->getAll();
-            Yii::endProfile($token, __METHOD__);
+            Yii::endProfile($token, 'devgroup\arangodb\Query::query');
         } catch (\Exception $ex) {
-            Yii::endProfile($token, __METHOD__);
+            Yii::endProfile($token, 'devgroup\arangodb\Query::query');
             throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
         }
         if (!empty($rows)) {

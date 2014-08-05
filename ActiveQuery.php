@@ -117,7 +117,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
 
     public function all($db = null)
     {
-        $statement = $this->createCommand();
+        $statement = $this->createCommand($db);
         $token = $this->getRawAql($statement);
         Yii::info($token, 'devgroup\arangodb\Query::query');
         try {

@@ -65,7 +65,7 @@ class Query extends Component implements QueryInterface
         return $db->getStatement($options);
     }
 
-    public function createCommand($options = [])
+    public function createCommand($db = null, $options = [])
     {
         list ($aql, $params) = $this->buildQuery($this);
 
@@ -77,7 +77,7 @@ class Query extends Component implements QueryInterface
             ]
         );
 
-        return $this->getStatement($options);
+        return $this->getStatement($options, $db);
     }
 
     public function update($collection, $columns, $condition, $params)
@@ -489,7 +489,7 @@ class Query extends Component implements QueryInterface
 
     public function all($db = null)
     {
-        $statement = $this->createCommand();
+        $statement = $this->createCommand($db);
         $token = $this->getRawAql($statement);
         Yii::info($token, 'devgroup\arangodb\Query::query');
         try {
@@ -506,7 +506,7 @@ class Query extends Component implements QueryInterface
     public function one($db = null)
     {
         $this->limit(1);
-        $statement = $this->createCommand();
+        $statement = $this->createCommand($db);
         $token = $this->getRawAql($statement);
         Yii::info($token, 'devgroup\arangodb\Query::query');
         try {
@@ -540,7 +540,7 @@ class Query extends Component implements QueryInterface
 
     public function count($q = '*', $db = null)
     {
-        $statement = $this->createCommand();
+        $statement = $this->createCommand($db);
         $statement->setCount(true);
         $token = $this->getRawAql($statement);
         Yii::info($token, 'devgroup\arangodb\Query::query');

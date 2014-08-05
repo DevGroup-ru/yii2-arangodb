@@ -2,6 +2,7 @@
 
 namespace devgroup\arangodb;
 
+use triagens\ArangoDb\Document;
 use Yii;
 use yii\base\Component;
 use yii\base\InvalidParamException;
@@ -500,7 +501,7 @@ class Query extends Component implements QueryInterface
             Yii::endProfile($token, 'devgroup\arangodb\Query::query');
             throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
         }
-        return $cursor->getAll();
+        return $this->prepareResult($cursor->getAll());
     }
 
     public function one($db = null)
@@ -517,23 +518,30 @@ class Query extends Component implements QueryInterface
             Yii::endProfile($token, 'devgroup\arangodb\Query::query');
             throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
         }
-        $result = $cursor->getAll();
+        $result = $this->prepareResult($cursor->getAll());
         return empty($result) ? false : $result[0];
     }
 
+    /**
+     * @param Document[] $rows
+     * @return array
+     */
     public function prepareResult($rows)
     {
-        if ($this->indexBy === null) {
-            return $rows;
-        }
         $result = [];
-        foreach ($rows as $row) {
-            if (is_string($this->indexBy)) {
-                $key = $row[$this->indexBy];
-            } else {
-                $key = call_user_func($this->indexBy, $row);
+        if ($this->indexBy === null) {
+            foreach ($rows as $row) {
+                $result[] = $row->getAll();
             }
-            $result[$key] = $row;
+        } else {
+            foreach ($rows as $row) {
+                if (is_string($this->indexBy)) {
+                    $key = $row->{$this->indexBy};
+                } else {
+                    $key = call_user_func($this->indexBy, $row);
+                }
+                $result[$key] = $row->getAll();
+            }
         }
         return $result;
     }

@@ -133,12 +133,18 @@ abstract class ActiveRecord extends BaseActiveRecord
 
     /**
      * @param ActiveRecord $record
-     * @param Document $row
+     * @param Document|array $row
      */
     public static function populateRecord($record, $row)
     {
-        $record->document = $row;
-        parent::populateRecord($record, $record->document->getAll());
+        if (is_array($row)) {
+            $document = Document::createFromArray($row);
+        } else {
+            $document = $row;
+            $row = $row->getAll();
+        }
+        $record->document = $document;
+        parent::populateRecord($record, $row);
     }
 
     public function attributes()

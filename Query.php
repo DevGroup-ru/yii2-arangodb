@@ -285,7 +285,7 @@ class Query extends Component implements QueryInterface
         list($column, $values) = $operands;
 
         if ($values === [] || $column === []) {
-            return $operator === 'IN' ? '0=1' : '';
+            return $operator === 'IN' ? '0==1' : '';
         }
 
         if ($values instanceof Query) {

@@ -89,8 +89,8 @@ class MigrateController extends BaseMigrateController
     {
         try {
             $history = $this->getHistory($limit);
-        } catch (ServerException $ex) {
-            if ($ex->getServerCode() == 1203) {
+        } catch (\Exception $ex) {
+            if ($ex->getPrevious()->getServerCode() == 1203) {
                 $this->createMigrationHistoryCollection();
                 $history = $this->getHistory($limit);
             } else {

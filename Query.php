@@ -81,58 +81,6 @@ class Query extends Component implements QueryInterface
         return $this->getStatement($options, $db);
     }
 
-    public function update($collection, $columns, $condition, $params)
-    {
-        $clauses = [
-            $this->buildFrom($collection),
-            $this->buildWhere($condition, $params),
-            $this->buildUpdate($collection, $columns),
-        ];
-
-        $aql = implode($this->separator, array_filter($clauses));
-
-        $options = ArrayHelper::merge(
-            $params,
-            [
-                'query' => $aql,
-                'bindVars' => $params,
-            ]
-        );
-
-        return $this->getStatement($options);
-    }
-
-    public function remove($collection, $condition, $params)
-    {
-        $clauses = [
-            $this->buildFrom($collection),
-            $this->buildWhere($condition, $params),
-            $this->buildRemove($collection),
-        ];
-
-        $aql = implode($this->separator, array_filter($clauses));
-
-        $options = ArrayHelper::merge(
-            $params,
-            [
-                'query' => $aql,
-                'bindVars' => $params,
-            ]
-        );
-
-        return $this->getStatement($options);
-    }
-
-    protected function buildUpdate($collection, $columns)
-    {
-        return 'UPDATE ' . $collection . 'WITH ' . Json::encode($columns) . ' IN ' . $collection;
-    }
-
-    protected function buildRemove($collection)
-    {
-        return 'REMOVE ' . $collection . ' IN ' . $collection;
-    }
-
     /**
      * @param $fields
      * @return $this

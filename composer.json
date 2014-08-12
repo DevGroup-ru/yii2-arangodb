@@ -18,9 +18,13 @@
             "email": "fps.06@mail.ru"
         }
     ],
+    "minimum-stability": "dev",
     "require": {
         "yiisoft/yii2": "*",
         "triagens/arangodb": "*"
+    },
+    "require-dev": {
+        "yiisoft/yii2-debug": "*"
     },
     "autoload": {
         "psr-4": {

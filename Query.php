@@ -2,18 +2,15 @@
 
 namespace devgroup\arangodb;
 
-use triagens\ArangoDb\Cursor;
-use triagens\ArangoDb\Document;
 use Yii;
+use triagens\ArangoDb\Document;
+use triagens\ArangoDb\Statement;
 use yii\base\Component;
 use yii\base\InvalidParamException;
 use yii\base\NotSupportedException;
 use yii\db\QueryInterface;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Json;
-
-use triagens\ArangoDb\Statement;
-use yii\helpers\VarDumper;
 
 class Query extends Component implements QueryInterface
 {
@@ -475,7 +472,7 @@ class Query extends Component implements QueryInterface
     {
         $doc = Json::encode($columns);
 
-        $aql = "INSERT $doc IN $collection";
+        $aql = "INSERT $doc IN {$this->quoteCollectionName($collection)}";
 
         $options = ArrayHelper::merge(
             $params,
@@ -528,10 +525,13 @@ class Query extends Component implements QueryInterface
             Yii::endProfile($token, 'devgroup\arangodb\Query::update');
             throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
         }
-        return $cursor->getMetadata()['extra']['operations']['executed'];
+        $meta = $cursor->getMetadata();
+        return isset($meta['extra']['operations']['executed']) ?
+            $meta['extra']['operations']['executed'] :
+            true;
     }
 
-    public function remove($collection, $condition, $params = [], $db = null)
+    public function remove($collection, $condition = [], $params = [], $db = null)
     {
         $this->from($collection);
         $clauses = [
@@ -561,12 +561,17 @@ class Query extends Component implements QueryInterface
             Yii::endProfile($token, 'devgroup\arangodb\Query::remove');
             throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
         }
-        return $cursor->getMetadata()['extra']['operations']['executed'];
+        $meta = $cursor->getMetadata();
+        return isset($meta['extra']['operations']['executed']) ?
+            $meta['extra']['operations']['executed'] :
+            true;
     }
 
     protected function buildUpdate($collection, $columns)
     {
-        return 'UPDATE ' . $collection . ' WITH ' . Json::encode($columns) . ' IN ' . $collection;
+        return 'UPDATE ' . $collection . ' WITH '
+            . Json::encode($columns) . ' IN '
+            . $this->quoteCollectionName($collection);
     }
 
     protected function buildRemove($collection)

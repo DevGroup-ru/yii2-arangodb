@@ -3,12 +3,9 @@
 namespace devgroup\arangodb;
 
 use Yii;
-use yii\base\InvalidConfigException;
 use yii\db\ActiveQueryInterface;
 use yii\db\ActiveQueryTrait;
-use yii\db\ActiveRecordInterface;
 use yii\db\ActiveRelationTrait;
-use yii\helpers\VarDumper;
 
 use triagens\ArangoDb\Document;
 
@@ -101,18 +98,6 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         }
 
         return $models;
-    }
-
-    private function prefixKeyColumns($attributes)
-    {
-        if ($this instanceof ActiveQuery) {
-            /* @var $modelClass ActiveRecord */
-            $modelClass = $this->modelClass;
-            foreach ($attributes as $i => $attribute) {
-                $attributes[$i] = "{$modelClass::collectionName()}.$attribute";
-            }
-        }
-        return $attributes;
     }
 
     public function all($db = null)

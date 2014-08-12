@@ -39,11 +39,11 @@ abstract class Migration extends Component implements MigrationInterface
         echo " done (time: " . sprintf('%.3f', microtime(true) - $time) . "s)\n";
     }
 
-    public function insert($collection, $columns)
+    public function insert($collection, $columns, $params = [])
     {
         echo "    > insert into $collection ...";
         $time = microtime(true);
-        $this->db->getDocumentHandler()->save($collection, $columns);
+        (new Query())->insert($collection, $columns, $params);
         echo " done (time: " . sprintf('%.3f', microtime(true) - $time) . "s)\n";
     }
 
@@ -51,7 +51,7 @@ abstract class Migration extends Component implements MigrationInterface
     {
         echo "    > update $collection ...";
         $time = microtime(true);
-        (new Query())->update($collection, $columns, $condition, $params)->execute();
+        (new Query())->update($collection, $columns, $condition, $params);
         echo " done (time: " . sprintf('%.3f', microtime(true) - $time) . "s)\n";
     }
 
@@ -59,7 +59,7 @@ abstract class Migration extends Component implements MigrationInterface
     {
         echo "    > delete from $collection ...";
         $time = microtime(true);
-        (new Query())->remove($collection, $condition, $params)->execute();
+        (new Query())->remove($collection, $condition, $params);
         echo " done (time: " . sprintf('%.3f', microtime(true) - $time) . "s)\n";
     }
 

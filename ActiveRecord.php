@@ -16,16 +16,6 @@ use triagens\ArangoDb\Document;
 
 abstract class ActiveRecord extends BaseActiveRecord
 {
-    /** @var Document $document */
-    private $document;
-
-    public function __construct($config = [])
-    {
-        $this->document = new Document();
-
-        parent::__construct($config);
-    }
-
     public function mergeAttribute($name, $value)
     {
         $newValue = $this->getAttribute($name);
@@ -44,12 +34,6 @@ abstract class ActiveRecord extends BaseActiveRecord
     public static function collectionName()
     {
         return Inflector::camel2id(StringHelper::basename(get_called_class()), '_');
-    }
-
-    public function setAttribute($name, $value)
-    {
-        $this->document->set($name, $value);
-        parent::setAttribute($name, $value);
     }
 
     /**
@@ -136,13 +120,10 @@ abstract class ActiveRecord extends BaseActiveRecord
      */
     public static function populateRecord($record, $row)
     {
-        if (is_array($row)) {
-            $document = Document::createFromArray($row);
-        } else {
-            $document = $row;
+        if ($row instanceof Document) {
             $row = $row->getAll();
         }
-        $record->document = $document;
+
         parent::populateRecord($record, $row);
     }
 
@@ -205,7 +186,7 @@ abstract class ActiveRecord extends BaseActiveRecord
         $this->setIsNewRecord(false);
 
         $changedAttributes = array_fill_keys(array_keys($values), null);
-        $this->setOldAttributes($this->document->getAll());
+        $this->setOldAttributes($values);
         $this->afterSave(true, $changedAttributes);
 
         return true;
@@ -395,20 +376,6 @@ abstract class ActiveRecord extends BaseActiveRecord
         $this->setOldAttributes(null);
 
         return $result;
-    }
-
-    /**
-     * Returns a value indicating whether the current record is new (not saved in the database).
-     * @return boolean whether the record is new and should be inserted when calling [[save()]].
-     */
-    public function getIsNewRecord()
-    {
-        return $this->document->getIsNew();
-    }
-
-    public function setIsNewRecord($value)
-    {
-        $this->document->setIsNew($value);
     }
 
     public function init()

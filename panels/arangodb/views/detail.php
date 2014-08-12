@@ -45,6 +45,12 @@ echo GridView::widget([
             ]
         ],
         [
+            'attribute' => 'type',
+            'value' => function ($data) {
+                return Html::encode(mb_strtoupper($data['type'], 'utf8'));
+            },
+        ],
+        [
             'attribute' => 'query',
             'value' => function ($data) {
                 $query = Html::encode($data['query']);

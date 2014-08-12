@@ -122,6 +122,7 @@ class ArangoDbPanel extends Panel
 
             foreach ($timings as $seq => $dbTiming) {
                 $this->_models[] = [
+                    'type' => $this->getQueryType($dbTiming['category']),
                     'query' => $dbTiming['info'],
                     'duration' => ($dbTiming['duration'] * 1000), // in milliseconds
                     'trace' => $dbTiming['trace'],
@@ -132,6 +133,23 @@ class ArangoDbPanel extends Panel
         }
 
         return $this->_models;
+    }
+
+    protected function getQueryType($category) {
+        switch ($category) {
+            case 'devgroup\arangodb\Query::query' :
+                return 'SELECT';
+            case 'devgroup\arangodb\Query::insert' :
+                return 'INSERT';
+            case 'devgroup\arangodb\Query::update' :
+                return 'UPDATE';
+            case 'devgroup\arangodb\Query::remove' :
+                return 'REMOVE';
+            case 'devgroup\arangodb\Query::execute' :
+                return 'EXECUTE';
+            default :
+                return '';
+        }
     }
 
     public function save()

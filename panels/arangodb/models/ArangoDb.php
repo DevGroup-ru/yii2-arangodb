@@ -14,6 +14,8 @@ class ArangoDb extends Base
      */
     public $query;
 
+    public $type;
+
 
     /**
      * @inheritdoc
@@ -21,7 +23,7 @@ class ArangoDb extends Base
     public function rules()
     {
         return [
-            [['query'], 'safe'],
+            [['query', 'type'], 'safe'],
         ];
     }
 
@@ -31,6 +33,7 @@ class ArangoDb extends Base
     public function attributeLabels()
     {
         return [
+            'type' => 'Type',
             'query' => 'Query',
         ];
     }
@@ -48,7 +51,7 @@ class ArangoDb extends Base
             'allModels' => $models,
             'pagination' => false,
             'sort' => [
-                'attributes' => ['duration', 'seq', 'query'],
+                'attributes' => ['duration', 'seq', 'query', 'type'],
                 'defaultOrder' => [
                     'duration' => SORT_DESC,
                 ],
@@ -60,6 +63,7 @@ class ArangoDb extends Base
         }
 
         $filter = new Filter();
+        $this->addCondition($filter, 'type', true);
         $this->addCondition($filter, 'query', true);
         $dataProvider->allModels = $filter->filter($models);
 

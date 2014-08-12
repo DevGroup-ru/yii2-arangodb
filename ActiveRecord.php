@@ -364,7 +364,7 @@ abstract class ActiveRecord extends BaseActiveRecord
      */
     protected function deleteInternal()
     {
-        $condition = $this->getOldPrimaryKey();
+        $condition = $this->getOldPrimaryKey(true);
         $lock = $this->optimisticLock();
         if ($lock !== null) {
             $condition[$lock] = $this->$lock;

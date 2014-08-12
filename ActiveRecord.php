@@ -156,19 +156,20 @@ abstract class ActiveRecord extends BaseActiveRecord
      * If the validation fails, the record will not be inserted into the database.
      * @param array $attributes list of attributes that need to be saved. Defaults to null,
      * meaning all attributes that are loaded from DB will be saved.
+     * @param array $options
      * @return boolean whether the attributes are valid and the record is inserted successfully.
      */
-    public function insert($runValidation = true, $attributes = null)
+    public function insert($runValidation = true, $attributes = null, $options = [])
     {
         if ($runValidation && !$this->validate($attributes)) {
             return false;
         }
-        $result = $this->insertInternal($attributes);
+        $result = $this->insertInternal($attributes, $options);
 
         return $result;
     }
 
-    protected function insertInternal($attributes = null)
+    protected function insertInternal($attributes = null, $options = [])
     {
         if (!$this->beforeSave(true)) {
             return false;
@@ -192,7 +193,15 @@ abstract class ActiveRecord extends BaseActiveRecord
         return true;
     }
 
-    protected function updateInternal($attributes = null)
+    public function update($runValidation = true, $attributeNames = null, $options = [])
+    {
+        if ($runValidation && !$this->validate($attributeNames)) {
+            return false;
+        }
+        return $this->updateInternal($attributeNames, $options);
+    }
+
+    protected function updateInternal($attributes = null, $options = [])
     {
         if (!$this->beforeSave(false)) {
             return false;
@@ -215,7 +224,7 @@ abstract class ActiveRecord extends BaseActiveRecord
             $this->setAttribute($key, $attribute);
         }
 
-        $rows = (new Query())->update(
+        $rows = (new Query())->options($options)->update(
             static::collectionName(),
             $values,
             [
@@ -278,11 +287,12 @@ abstract class ActiveRecord extends BaseActiveRecord
      * @param array $condition the condition that matches the records that should get updated.
      * Please refer to [[QueryInterface::where()]] on how to specify this parameter.
      * An empty condition will match all records.
+     * @param array $options
      * @return integer the number of rows updated
      */
-    public static function updateAll($attributes, $condition = [])
+    public static function updateAll($attributes, $condition = [], $options = [])
     {
-        return (new Query())->update(static::collectionName(), $attributes, $condition);
+        return (new Query())->options($options)->update(static::collectionName(), $attributes, $condition);
     }
 
     /**
@@ -298,11 +308,12 @@ abstract class ActiveRecord extends BaseActiveRecord
      * @param array $condition the condition that matches the records that should get deleted.
      * Please refer to [[QueryInterface::where()]] on how to specify this parameter.
      * An empty condition will match all records.
+     * @param array $options
      * @return integer the number of rows deleted
      */
-    public static function deleteAll($condition = [])
+    public static function deleteAll($condition = [], $options = [])
     {
-        return (new Query())->remove(static::collectionName(), $condition);
+        return (new Query())->options($options)->remove(static::collectionName(), $condition);
     }
 
     public static function truncate()
@@ -330,28 +341,30 @@ abstract class ActiveRecord extends BaseActiveRecord
      * in this case.
      * @param array $attributeNames list of attributes that need to be saved. Defaults to null,
      * meaning all attributes that are loaded from DB will be saved.
+     * @param array $options
      * @return boolean whether the saving succeeds
      */
-    public function save($runValidation = true, $attributeNames = null)
+    public function save($runValidation = true, $attributeNames = null, $options = [])
     {
         if ($this->getIsNewRecord()) {
-            return $this->insert($runValidation, $attributeNames);
+            return $this->insert($runValidation, $attributeNames, $options);
         } else {
-            return $this->update($runValidation, $attributeNames) !== false;
+            return $this->update($runValidation, $attributeNames, $options) !== false;
         }
     }
 
     /**
      * Deletes the record from the database.
      *
+     * @param array $options
      * @return integer|boolean the number of rows deleted, or false if the deletion is unsuccessful for some reason.
      * Note that it is possible that the number of rows deleted is 0, even though the deletion execution is successful.
      */
-    public function delete()
+    public function delete($options = [])
     {
         $result = false;
         if ($this->beforeDelete()) {
-            $result = $this->deleteInternal();
+            $result = $this->deleteInternal($options);
             $this->afterDelete();
         }
 
@@ -362,14 +375,14 @@ abstract class ActiveRecord extends BaseActiveRecord
      * @see ActiveRecord::delete()
      * @throws StaleObjectException
      */
-    protected function deleteInternal()
+    protected function deleteInternal($options = [])
     {
         $condition = $this->getOldPrimaryKey(true);
         $lock = $this->optimisticLock();
         if ($lock !== null) {
             $condition[$lock] = $this->$lock;
         }
-        $result = (new Query())->remove(static::collectionName(), $condition);
+        $result = (new Query())->options($options)->remove(static::collectionName(), $condition);
         if ($lock !== null && !$result) {
             throw new StaleObjectException('The object being deleted is outdated.');
         }

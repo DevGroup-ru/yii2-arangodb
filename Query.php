@@ -50,6 +50,8 @@ class Query extends Component implements QueryInterface
 
     public $params = [];
 
+    public $options = [];
+
     /**
      * @param array $options
      * @param null|Connection $db
@@ -472,16 +474,21 @@ class Query extends Component implements QueryInterface
     {
         $doc = Json::encode($columns);
 
-        $aql = "INSERT $doc IN {$this->quoteCollectionName($collection)}";
+        $clauses = [
+            "INSERT $doc IN {$this->quoteCollectionName($collection)}",
+            $this->buildOptions(),
+        ];
 
-        $options = ArrayHelper::merge(
+        $aql = implode($this->separator, array_filter($clauses));
+
+        $params = ArrayHelper::merge(
             $params,
             [
                 'query' => $aql,
             ]
         );
 
-        $statement = $this->getStatement($options, $db);
+        $statement = $this->getStatement($params, $db);
         $token = $this->getRawAql($statement);
         Yii::info($token, 'devgroup\arangodb\Query::insert');
         try {
@@ -502,11 +509,12 @@ class Query extends Component implements QueryInterface
             $this->buildFrom($collection),
             $this->buildWhere($condition, $params),
             $this->buildUpdate($collection, $columns),
+            $this->buildOptions(),
         ];
 
         $aql = implode($this->separator, array_filter($clauses));
 
-        $options = ArrayHelper::merge(
+        $params = ArrayHelper::merge(
             $params,
             [
                 'query' => $aql,
@@ -514,7 +522,7 @@ class Query extends Component implements QueryInterface
             ]
         );
 
-        $statement = $this->getStatement($options, $db);
+        $statement = $this->getStatement($params, $db);
         $token = $this->getRawAql($statement);
         Yii::info($token, 'devgroup\arangodb\Query::update');
         try {
@@ -538,11 +546,12 @@ class Query extends Component implements QueryInterface
             $this->buildFrom($collection),
             $this->buildWhere($condition, $params),
             $this->buildRemove($collection),
+            $this->buildOptions(),
         ];
 
         $aql = implode($this->separator, array_filter($clauses));
 
-        $options = ArrayHelper::merge(
+        $params = ArrayHelper::merge(
             $params,
             [
                 'query' => $aql,
@@ -550,7 +559,7 @@ class Query extends Component implements QueryInterface
             ]
         );
 
-        $statement = $this->getStatement($options, $db);
+        $statement = $this->getStatement($params, $db);
         $token = $this->getRawAql($statement);
         Yii::info($token, 'devgroup\arangodb\Query::remove');
         try {
@@ -577,6 +586,11 @@ class Query extends Component implements QueryInterface
     protected function buildRemove($collection)
     {
         return 'REMOVE ' . $collection . ' IN ' . $collection;
+    }
+
+    protected function buildOptions()
+    {
+        return empty($this->options) ? '' : ' OPTIONS ' . Json::encode($this->options);
     }
 
     /**
@@ -898,6 +912,30 @@ class Query extends Component implements QueryInterface
                         $this->params[] = $value;
                     } else {
                         $this->params[$name] = $value;
+                    }
+                }
+            }
+        }
+        return $this;
+    }
+
+    public function options($options)
+    {
+        $this->options = $options;
+        return $this;
+    }
+
+    public function addOptions($options)
+    {
+        if (!empty($options)) {
+            if (empty($this->options)) {
+                $this->params = $options;
+            } else {
+                foreach ($options as $name => $value) {
+                    if (is_integer($name)) {
+                        $this->options[] = $value;
+                    } else {
+                        $this->options[$name] = $value;
                     }
                 }
             }

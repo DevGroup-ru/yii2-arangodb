@@ -2,7 +2,6 @@
 
 namespace devgroup\arangodb;
 
-use triagens\ArangoDb\Document;
 use yii\base\Component;
 use yii\db\MigrationInterface;
 use yii\di\Instance;
@@ -40,11 +39,11 @@ abstract class Migration extends Component implements MigrationInterface
         echo " done (time: " . sprintf('%.3f', microtime(true) - $time) . "s)\n";
     }
 
-    public function insert($collection, $columns)
+    public function insert($collection, $columns, $params = [])
     {
         echo "    > insert into $collection ...";
         $time = microtime(true);
-        $this->db->getDocumentHandler()->save($collection, $columns);
+        (new Query())->insert($collection, $columns, $params);
         echo " done (time: " . sprintf('%.3f', microtime(true) - $time) . "s)\n";
     }
 
@@ -52,10 +51,7 @@ abstract class Migration extends Component implements MigrationInterface
     {
         echo "    > update $collection ...";
         $time = microtime(true);
-        $docs = (new Query())->select($collection)->from($collection)->where($condition, $params)->all();
-        foreach ($docs as $doc) {
-            $this->db->getDocumentHandler()->updateById($collection, $doc['_key'], Document::createFromArray($columns));
-        }
+        (new Query())->update($collection, $columns, $condition, $params);
         echo " done (time: " . sprintf('%.3f', microtime(true) - $time) . "s)\n";
     }
 
@@ -63,10 +59,7 @@ abstract class Migration extends Component implements MigrationInterface
     {
         echo "    > delete from $collection ...";
         $time = microtime(true);
-        $docs = (new Query())->select($collection)->from($collection)->where($condition, $params)->all();
-        foreach ($docs as $doc) {
-            $this->db->getDocumentHandler()->removeById($collection, $doc['_key']);
-        }
+        (new Query())->remove($collection, $condition, $params);
         echo " done (time: " . sprintf('%.3f', microtime(true) - $time) . "s)\n";
     }
 

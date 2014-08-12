@@ -2,6 +2,7 @@
 
 namespace devgroup\arangodb\panels\arangodb\models;
 
+use yii;
 use yii\data\ArrayDataProvider;
 use yii\debug\components\search\Filter;
 use yii\debug\models\search\Base;

@@ -5,7 +5,6 @@ namespace devgroup\arangodb;
 use Yii;
 use yii\base\ArrayableTrait;
 use yii\base\InvalidConfigException;
-use yii\base\Model;
 use yii\db\ActiveQueryInterface;
 use yii\db\BaseActiveRecord;
 use yii\db\StaleObjectException;
@@ -17,16 +16,6 @@ use triagens\ArangoDb\Document;
 
 abstract class ActiveRecord extends BaseActiveRecord
 {
-    /** @var Document $document */
-    private $document;
-
-    public function __construct($config = [])
-    {
-        $this->document = new Document();
-
-        parent::__construct($config);
-    }
-
     public function mergeAttribute($name, $value)
     {
         $newValue = $this->getAttribute($name);
@@ -45,12 +34,6 @@ abstract class ActiveRecord extends BaseActiveRecord
     public static function collectionName()
     {
         return Inflector::camel2id(StringHelper::basename(get_called_class()), '_');
-    }
-
-    public function setAttribute($name, $value)
-    {
-        $this->document->set($name, $value);
-        parent::setAttribute($name, $value);
     }
 
     /**
@@ -113,11 +96,11 @@ abstract class ActiveRecord extends BaseActiveRecord
      * }
      *
      * // Use andWhere()/orWhere() to apply the default condition
-     * // SELECT FROM customer WHERE `deleted`=:deleted AND age>30
+     * // FOR customer IN customer FILTER customer.deleted=:deleted AND customer.age>30 RETURN customer
      * $customers = Customer::find()->andWhere('age>30')->all();
      *
      * // Use where() to ignore the default condition
-     * // SELECT FROM customer WHERE age>30
+     * // FOR customer IN customer FILTER customer.age>30 RETURN customer
      * $customers = Customer::find()->where('age>30')->all();
      *
      * @return ActiveQueryInterface the newly created [[ActiveQueryInterface|ActiveQuery]] instance.
@@ -137,13 +120,10 @@ abstract class ActiveRecord extends BaseActiveRecord
      */
     public static function populateRecord($record, $row)
     {
-        if (is_array($row)) {
-            $document = Document::createFromArray($row);
-        } else {
-            $document = $row;
+        if ($row instanceof Document) {
             $row = $row->getAll();
         }
-        $record->document = $document;
+
         parent::populateRecord($record, $row);
     }
 
@@ -206,7 +186,7 @@ abstract class ActiveRecord extends BaseActiveRecord
         $this->setIsNewRecord(false);
 
         $changedAttributes = array_fill_keys(array_keys($values), null);
-        $this->setOldAttributes($this->document->getAll());
+        $this->setOldAttributes($values);
         $this->afterSave(true, $changedAttributes);
 
         return true;
@@ -235,10 +215,12 @@ abstract class ActiveRecord extends BaseActiveRecord
             $this->setAttribute($key, $attribute);
         }
 
-        $rows = static::getDb()->getDocumentHandler()->updateById(
+        $rows = (new Query())->update(
             static::collectionName(),
-            $this->getOldAttribute('_key'),
-            Document::createFromArray($values)
+            $values,
+            [
+                '_key' => $this->getOldAttribute('_key'),
+            ]
         );
 
         if ($lock !== null && !$rows) {
@@ -300,20 +282,7 @@ abstract class ActiveRecord extends BaseActiveRecord
      */
     public static function updateAll($attributes, $condition = [])
     {
-        $docs = static::findAll($condition);
-
-        $count = 0;
-        foreach ($docs as $doc) {
-            foreach ($attributes as $key => $attribute) {
-                $doc->setAttribute($key, $attribute);
-                $doc->document->set($key, $attribute);
-            }
-            if (static::getDb()->getDocumentHandler()->update($doc->document)) {
-                $count++;
-            }
-        }
-
-        return $count;
+        return (new Query())->update(static::collectionName(), $attributes, $condition);
     }
 
     /**
@@ -331,19 +300,9 @@ abstract class ActiveRecord extends BaseActiveRecord
      * An empty condition will match all records.
      * @return integer the number of rows deleted
      */
-    public static function deleteAll($condition = null)
+    public static function deleteAll($condition = [])
     {
-        /** @var Document[] $docs */
-        $records = static::findAll($condition);
-
-        $count = 0;
-        foreach ($records as $record) {
-            if (static::getDb()->getDocumentHandler()->remove($record->document)) {
-                $count++;
-            }
-        }
-
-        return $count;
+        return (new Query())->remove(static::collectionName(), $condition);
     }
 
     public static function truncate()
@@ -410,27 +369,13 @@ abstract class ActiveRecord extends BaseActiveRecord
         if ($lock !== null) {
             $condition[$lock] = $this->$lock;
         }
-        $result = static::getDb()->getDocumentHandler()->removeById(static::collectionName(), $condition);
+        $result = (new Query())->remove(static::collectionName(), $condition);
         if ($lock !== null && !$result) {
             throw new StaleObjectException('The object being deleted is outdated.');
         }
         $this->setOldAttributes(null);
 
         return $result;
-    }
-
-    /**
-     * Returns a value indicating whether the current record is new (not saved in the database).
-     * @return boolean whether the record is new and should be inserted when calling [[save()]].
-     */
-    public function getIsNewRecord()
-    {
-        return $this->document->getIsNew();
-    }
-
-    public function setIsNewRecord($value)
-    {
-        $this->document->setIsNew($value);
     }
 
     public function init()

@@ -2,17 +2,15 @@
 
 namespace devgroup\arangodb;
 
-use triagens\ArangoDb\Document;
 use Yii;
+use triagens\ArangoDb\Document;
+use triagens\ArangoDb\Statement;
 use yii\base\Component;
 use yii\base\InvalidParamException;
 use yii\base\NotSupportedException;
 use yii\db\QueryInterface;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Json;
-
-use triagens\ArangoDb\Statement;
-use yii\helpers\VarDumper;
 
 class Query extends Component implements QueryInterface
 {
@@ -468,6 +466,117 @@ class Query extends Component implements QueryInterface
         }
         $result = $this->prepareResult($cursor->getAll());
         return empty($result) ? false : $result[0];
+    }
+
+    public function insert($collection, $columns, $params = [], $db = null)
+    {
+        $doc = Json::encode($columns);
+
+        $aql = "INSERT $doc IN {$this->quoteCollectionName($collection)}";
+
+        $options = ArrayHelper::merge(
+            $params,
+            [
+                'query' => $aql,
+            ]
+        );
+
+        $statement = $this->getStatement($options, $db);
+        $token = $this->getRawAql($statement);
+        Yii::info($token, 'devgroup\arangodb\Query::insert');
+        try {
+            Yii::beginProfile($token, 'devgroup\arangodb\Query::insert');
+            $cursor = $statement->execute();
+            Yii::endProfile($token, 'devgroup\arangodb\Query::insert');
+        } catch (\Exception $ex) {
+            Yii::endProfile($token, 'devgroup\arangodb\Query::insert');
+            throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
+        }
+        return true;
+    }
+
+    public function update($collection, $columns, $condition = [], $params = [], $db = null)
+    {
+        $this->from($collection);
+        $clauses = [
+            $this->buildFrom($collection),
+            $this->buildWhere($condition, $params),
+            $this->buildUpdate($collection, $columns),
+        ];
+
+        $aql = implode($this->separator, array_filter($clauses));
+
+        $options = ArrayHelper::merge(
+            $params,
+            [
+                'query' => $aql,
+                'bindVars' => $params,
+            ]
+        );
+
+        $statement = $this->getStatement($options, $db);
+        $token = $this->getRawAql($statement);
+        Yii::info($token, 'devgroup\arangodb\Query::update');
+        try {
+            Yii::beginProfile($token, 'devgroup\arangodb\Query::update');
+            $cursor = $statement->execute();
+            Yii::endProfile($token, 'devgroup\arangodb\Query::update');
+        } catch (\Exception $ex) {
+            Yii::endProfile($token, 'devgroup\arangodb\Query::update');
+            throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
+        }
+        $meta = $cursor->getMetadata();
+        return isset($meta['extra']['operations']['executed']) ?
+            $meta['extra']['operations']['executed'] :
+            true;
+    }
+
+    public function remove($collection, $condition = [], $params = [], $db = null)
+    {
+        $this->from($collection);
+        $clauses = [
+            $this->buildFrom($collection),
+            $this->buildWhere($condition, $params),
+            $this->buildRemove($collection),
+        ];
+
+        $aql = implode($this->separator, array_filter($clauses));
+
+        $options = ArrayHelper::merge(
+            $params,
+            [
+                'query' => $aql,
+                'bindVars' => $params,
+            ]
+        );
+
+        $statement = $this->getStatement($options, $db);
+        $token = $this->getRawAql($statement);
+        Yii::info($token, 'devgroup\arangodb\Query::remove');
+        try {
+            Yii::beginProfile($token, 'devgroup\arangodb\Query::remove');
+            $cursor = $statement->execute();
+            Yii::endProfile($token, 'devgroup\arangodb\Query::remove');
+        } catch (\Exception $ex) {
+            Yii::endProfile($token, 'devgroup\arangodb\Query::remove');
+            throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
+        }
+        $meta = $cursor->getMetadata();
+        return isset($meta['extra']['operations']['executed']) ?
+            $meta['extra']['operations']['executed'] :
+            true;
+    }
+
+    protected function buildUpdate($collection, $columns)
+    {
+        return 'UPDATE ' . $collection . ' WITH '
+            . Json::encode($columns) . ' IN '
+            . $this->quoteCollectionName($collection);
+    }
+
+    protected function buildRemove($collection)
+    {
+        return 'REMOVE ' . $collection . ' IN ' . $collection;
     }
 
     /**

@@ -33,6 +33,9 @@ class ArangoDbPanel extends Panel
             Logger::LEVEL_PROFILE,
             [
                 'devgroup\arangodb\Query::query',
+                'devgroup\arangodb\Query::insert',
+                'devgroup\arangodb\Query::update',
+                'devgroup\arangodb\Query::remove',
                 'devgroup\arangodb\Query::execute',
             ]
         );

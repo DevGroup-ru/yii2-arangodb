@@ -11,8 +11,6 @@ use yii;
 use yii\console\controllers\BaseMigrateController;
 use yii\helpers\ArrayHelper;
 
-use triagens\ArangoDb\ServerException;
-
 class MigrateController extends BaseMigrateController
 {
     /**

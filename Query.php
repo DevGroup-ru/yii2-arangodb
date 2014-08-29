@@ -357,10 +357,7 @@ class Query extends Component implements QueryInterface
     {
         $aql = '';
         if ($this->hasLimit($limit)) {
-            $aql = 'LIMIT ' . $limit;
-            if ($this->hasOffset($offset)) {
-                $aql .= ', ' . $offset;
-            }
+            $aql = 'LIMIT ' . ($this->hasOffset($offset) ? $offset : '0') . ',' . $limit;
         }
 
         return $aql;

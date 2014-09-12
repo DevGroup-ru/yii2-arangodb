@@ -394,7 +394,9 @@ abstract class ActiveRecord extends BaseActiveRecord
     public function init()
     {
         parent::init();
-        $this->setAttributes($this->defaultValues(), false);
+        if ($this->scenario === static::SCENARIO_DEFAULT) {
+            $this->setAttributes($this->defaultValues(), false);
+        }
     }
 
     public function defaultValues()

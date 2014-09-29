@@ -391,6 +391,60 @@ abstract class ActiveRecord extends BaseActiveRecord
         return $result;
     }
 
+    /**
+     * Returns a value indicating whether the named attribute has been changed.
+     * @param string $name the name of the attribute
+     * @return boolean whether the attribute has been changed
+     */
+    public function isAttributeChanged($name, $depth = 2)
+    {
+        if (is_array($this->getAttribute($name))) {
+            $new = $this->getAttribute($name);
+            $old = $this->getOldAttribute($name);
+            if ($depth < 1) {
+                $depth = 1;
+            }
+            return self::isArrayChanged($new, $old, $depth);
+        } else {
+            return parent::isAttributeChanged($name);
+        }
+    }
+
+    private static function isArrayChanged(&$new, &$old, $depth)
+    {
+        if (is_array($new)) {
+            if (is_array($old)) {
+                if (count($new) != count($old)) {
+                    return true;
+                } else {
+                    $newKeys = array_keys($new);
+                    $oldKeys = array_keys($old);
+                    if (array_merge(array_diff($newKeys, $oldKeys), array_diff($oldKeys, $newKeys))) {
+                        return true;
+                    } else {
+                        if ($depth > 1) {
+                            foreach ($new as $key => $value) {
+                                if (self::isArrayChanged($new[$key], $old[$key], $depth--)) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                return true;
+            }
+        } else {
+            if (is_array($old)) {
+                return true;
+            } else {
+                return (string)$new != (string)$old;
+            }
+        }
+
+        return false;
+    }
+
     public function init()
     {
         parent::init();

@@ -616,8 +616,13 @@ class Query extends Component implements QueryInterface
 
     public function count($q = '*', $db = null)
     {
+        $this->select = '1';
+        $this->limit(1);
+        $this->offset(0);
         $statement = $this->createCommand($db);
-        $statement->setCount(true);
+        $statement->setFullCount(true);
+        $statement->setBatchSize(1);
+
         $token = $this->getRawAql($statement);
         Yii::info($token, 'devgroup\arangodb\Query::query');
         try {
@@ -628,7 +633,7 @@ class Query extends Component implements QueryInterface
             Yii::endProfile($token, 'devgroup\arangodb\Query::query');
             throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
         }
-        return $cursor->getCount();
+        return $cursor->getFullCount();
     }
 
     public function exists($db = null)

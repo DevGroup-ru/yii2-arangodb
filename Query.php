@@ -576,7 +576,7 @@ class Query extends Component implements QueryInterface
     protected function buildUpdate($collection, $columns)
     {
         return 'UPDATE ' . $collection . ' WITH '
-            . Json::encode($columns) . ' IN '
+            . (is_array($columns) ? Json::encode($columns) : $columns) . ' IN '
             . $this->quoteCollectionName($collection);
     }
 

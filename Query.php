@@ -480,7 +480,7 @@ class Query extends Component implements QueryInterface
 
     public function insert($collection, $columns, $params = [], $db = null)
     {
-        $doc = Json::encode($columns);
+        $doc = Serializer::encode($columns);
 
         $clauses = [
             "INSERT $doc IN {$this->quoteCollectionName($collection)}",
@@ -587,7 +587,7 @@ class Query extends Component implements QueryInterface
     protected function buildUpdate($collection, $columns)
     {
         return 'UPDATE ' . $collection . ' WITH '
-            . (is_array($columns) ? Json::encode($columns) : $columns) . ' IN '
+            . Serializer::encode($columns) . ' IN '
             . $this->quoteCollectionName($collection);
     }
 

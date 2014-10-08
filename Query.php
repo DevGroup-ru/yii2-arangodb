@@ -81,6 +81,17 @@ class Query extends Component implements QueryInterface
         return $this->getStatement($options, $db);
     }
 
+    public function execute($aql, $bindValues = [], $params = [])
+    {
+        $options = [
+            'query' => $aql,
+            'bindValues' => $bindValues,
+        ];
+        $options = ArrayHelper::merge($params, $options);
+        $statement = $this->getStatement($options);
+        $statement->execute();
+    }
+
     /**
      * @param $fields
      * @return $this

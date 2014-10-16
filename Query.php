@@ -85,11 +85,21 @@ class Query extends Component implements QueryInterface
     {
         $options = [
             'query' => $aql,
-            'bindValues' => $bindValues,
+            'bindVars' => $bindValues,
         ];
         $options = ArrayHelper::merge($params, $options);
         $statement = $this->getStatement($options);
-        $statement->execute();
+        $token = $this->getRawAql($statement);
+        Yii::info($token, 'devgroup\arangodb\Query::query');
+        try {
+            Yii::beginProfile($token, 'devgroup\arangodb\Query::query');
+            $cursor = $statement->execute();
+            Yii::endProfile($token, 'devgroup\arangodb\Query::query');
+        } catch (\Exception $ex) {
+            Yii::endProfile($token, 'devgroup\arangodb\Query::query');
+            throw new \Exception($ex->getMessage(), (int) $ex->getCode(), $ex);
+        }
+        return $this->prepareResult($cursor->getAll());
     }
 
     /**

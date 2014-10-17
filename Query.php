@@ -66,6 +66,36 @@ class Query extends Component implements QueryInterface
         return $db->getStatement($options);
     }
 
+    /**
+     * @param $aql
+     * @param $params
+     * @return array [$aql, $params]
+     */
+    private static function prepareBindVars($aql, $params)
+    {
+        $search = [];
+        $replace = [];
+
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                $search[] = "@$key";
+                $replace[] = json_encode($value);
+                unset($params[$key]);
+            }
+        }
+
+        if (count($search)) {
+            $aql = str_replace($search, $replace, $aql);
+        }
+
+        return [$aql, $params];
+    }
+
+    /**
+     * @param null|Connection $db
+     * @param array $options
+     * @return null|Statement
+     */
     public function createCommand($db = null, $options = [])
     {
         list ($aql, $params) = $this->buildQuery($this);
@@ -81,12 +111,22 @@ class Query extends Component implements QueryInterface
         return $this->getStatement($options, $db);
     }
 
+    /**
+     * @param $aql
+     * @param array $bindValues
+     * @param array $params
+     * @return array
+     * @throws \Exception
+     */
     public function execute($aql, $bindValues = [], $params = [])
     {
+        list ($aql, $bindValues) = self::prepareBindVars($aql, $bindValues);
+
         $options = [
             'query' => $aql,
             'bindVars' => $bindValues,
         ];
+
         $options = ArrayHelper::merge($params, $options);
         $statement = $this->getStatement($options);
         $token = $this->getRawAql($statement);
@@ -113,6 +153,10 @@ class Query extends Component implements QueryInterface
         return $this;
     }
 
+    /**
+     * @param $collection
+     * @return $this
+     */
     public function from($collection)
     {
         $this->from = $collection;
@@ -120,12 +164,20 @@ class Query extends Component implements QueryInterface
         return $this;
     }
 
+    /**
+     * @param $collection
+     * @return string
+     */
     protected function buildFrom($collection)
     {
         $collection = trim($collection);
         return $collection ? "FOR $collection IN $collection" : '';
     }
 
+    /**
+     * @param $name
+     * @return string
+     */
     public function quoteCollectionName($name)
     {
         if (strpos($name, '(') !== false || strpos($name, '{{') !== false) {
@@ -143,6 +195,10 @@ class Query extends Component implements QueryInterface
 
     }
 
+    /**
+     * @param $name
+     * @return string
+     */
     public function quoteColumnName($name)
     {
         if (strpos($name, '(') !== false || strpos($name, '[[') !== false || strpos($name, '{{') !== false) {
@@ -159,6 +215,11 @@ class Query extends Component implements QueryInterface
         return $prefix . $name;
     }
 
+    /**
+     * @param $condition
+     * @param $params
+     * @return string
+     */
     protected function buildWhere($condition, &$params)
     {
         $where = $this->buildCondition($condition, $params);
@@ -166,6 +227,11 @@ class Query extends Component implements QueryInterface
         return $where === '' ? '' : 'FILTER ' . $where;
     }
 
+    /**
+     * @param $condition
+     * @param $params
+     * @return string
+     */
     protected function buildCondition($condition, &$params)
     {
         if (!is_array($condition)) {
@@ -188,6 +254,12 @@ class Query extends Component implements QueryInterface
         }
     }
 
+    /**
+     * @param $condition
+     * @param $params
+     * @return string
+     * @throws Exception
+     */
     protected function buildHashCondition($condition, &$params)
     {
         $parts = [];
@@ -211,6 +283,12 @@ class Query extends Component implements QueryInterface
         return count($parts) === 1 ? $parts[0] : '(' . implode(') && (', $parts) . ')';
     }
 
+    /**
+     * @param $operator
+     * @param $operands
+     * @param $params
+     * @return string
+     */
     protected function buildAndCondition($operator, $operands, &$params)
     {
         $parts = [];
@@ -229,6 +307,12 @@ class Query extends Component implements QueryInterface
         }
     }
 
+    /**
+     * @param $operator
+     * @param $operands
+     * @param $params
+     * @return string
+     */
     protected function buildNotCondition($operator, $operands, &$params)
     {
         if (count($operands) != 1) {
@@ -246,6 +330,13 @@ class Query extends Component implements QueryInterface
         return "{$this->conditionMap[$operator]} ($operand)";
     }
 
+    /**
+     * @param $operator
+     * @param $operands
+     * @param $params
+     * @return string
+     * @throws Exception
+     */
     protected function buildInCondition($operator, $operands, &$params)
     {
         if (!isset($operands[0], $operands[1])) {
@@ -310,6 +401,13 @@ class Query extends Component implements QueryInterface
         }
     }
 
+    /**
+     * @param $operator
+     * @param $columns
+     * @param $values
+     * @param $params
+     * @return string
+     */
     protected function buildCompositeInCondition($operator, $columns, $values, &$params)
     {
         $vss = [];
@@ -335,6 +433,12 @@ class Query extends Component implements QueryInterface
         return '(' . implode(', ', $columns) . ") {$this->conditionMap[$operator]} [" . implode(', ', $vss) . ']';
     }
 
+    /**
+     * @param $operator
+     * @param $condition
+     * @param $params
+     * @return string
+     */
     protected function buildLikeCondition($operator, $condition, &$params)
     {
         if (!(isset($condition[0]) && isset($condition[1]))) {
@@ -351,6 +455,10 @@ class Query extends Component implements QueryInterface
             . ')';
     }
 
+    /**
+     * @param $columns
+     * @return string
+     */
     protected function buildOrderBy($columns)
     {
         if (empty($columns)) {
@@ -364,16 +472,29 @@ class Query extends Component implements QueryInterface
         return 'SORT ' . implode(', ', $orders);
     }
 
+    /**
+     * @param $limit
+     * @return bool
+     */
     protected function hasLimit($limit)
     {
         return is_string($limit) && ctype_digit($limit) || is_integer($limit) && $limit >= 0;
     }
 
+    /**
+     * @param $offset
+     * @return bool
+     */
     protected function hasOffset($offset)
     {
         return is_integer($offset) && $offset > 0 || is_string($offset) && ctype_digit($offset) && $offset !== '0';
     }
 
+    /**
+     * @param $limit
+     * @param $offset
+     * @return string
+     */
     protected function buildLimit($limit, $offset)
     {
         $aql = '';
@@ -384,6 +505,11 @@ class Query extends Component implements QueryInterface
         return $aql;
     }
 
+    /**
+     * @param $columns
+     * @param $params
+     * @return string
+     */
     protected function buildSelect($columns, &$params)
     {
         if ($columns == null || empty($columns)) {
@@ -406,6 +532,11 @@ class Query extends Component implements QueryInterface
         return 'RETURN {' . trim($names, ', ') . '}';
     }
 
+    /**
+     * @param null $query
+     * @param array $params
+     * @return array
+     */
     protected function buildQuery($query = null, $params = [])
     {
         $query = isset($query) ? $query : $this;
@@ -428,7 +559,7 @@ class Query extends Component implements QueryInterface
 
         $aql = implode($query->separator, array_filter($clauses));
 
-        return [$aql, $params];
+        return self::prepareBindVars($aql, $params);
     }
 
     /**
@@ -444,7 +575,7 @@ class Query extends Component implements QueryInterface
         $replace = [];
         foreach ($values as $key => $value) {
             $search[] = "@$key";
-            $replace[] = is_string($value) ? "\"$value\"" : $value;
+            $replace[] = is_string($value) ? "\"$value\"" : json_encode($value);
         }
 
         if (count($search)) {
@@ -454,6 +585,11 @@ class Query extends Component implements QueryInterface
         return $query;
     }
 
+    /**
+     * @param null $db
+     * @return array
+     * @throws \Exception
+     */
     public function all($db = null)
     {
         $statement = $this->createCommand($db);
@@ -470,6 +606,11 @@ class Query extends Component implements QueryInterface
         return $this->prepareResult($cursor->getAll());
     }
 
+    /**
+     * @param null $db
+     * @return array|bool
+     * @throws \Exception
+     */
     public function one($db = null)
     {
         $this->limit(1);
@@ -488,6 +629,14 @@ class Query extends Component implements QueryInterface
         return empty($result) ? false : $result[0];
     }
 
+    /**
+     * @param $collection
+     * @param $columns
+     * @param array $params
+     * @param null $db
+     * @return bool
+     * @throws \Exception
+     */
     public function insert($collection, $columns, $params = [], $db = null)
     {
         $doc = Serializer::encode($columns);
@@ -520,6 +669,15 @@ class Query extends Component implements QueryInterface
         return true;
     }
 
+    /**
+     * @param $collection
+     * @param $columns
+     * @param array $condition
+     * @param array $params
+     * @param null $db
+     * @return bool
+     * @throws \Exception
+     */
     public function update($collection, $columns, $condition = [], $params = [], $db = null)
     {
         $this->from($collection);
@@ -557,6 +715,14 @@ class Query extends Component implements QueryInterface
             true;
     }
 
+    /**
+     * @param $collection
+     * @param array $condition
+     * @param array $params
+     * @param null $db
+     * @return bool
+     * @throws \Exception
+     */
     public function remove($collection, $condition = [], $params = [], $db = null)
     {
         $this->from($collection);
@@ -594,6 +760,11 @@ class Query extends Component implements QueryInterface
             true;
     }
 
+    /**
+     * @param $collection
+     * @param $columns
+     * @return string
+     */
     protected function buildUpdate($collection, $columns)
     {
         return 'UPDATE ' . $collection . ' WITH '
@@ -601,11 +772,18 @@ class Query extends Component implements QueryInterface
             . $this->quoteCollectionName($collection);
     }
 
+    /**
+     * @param $collection
+     * @return string
+     */
     protected function buildRemove($collection)
     {
         return 'REMOVE ' . $collection . ' IN ' . $collection;
     }
 
+    /**
+     * @return string
+     */
     protected function buildOptions()
     {
         return empty($this->options) ? '' : ' OPTIONS ' . Json::encode($this->options);
@@ -635,6 +813,13 @@ class Query extends Component implements QueryInterface
         return $result;
     }
 
+    /**
+     * @param string $q
+     * @param null $db
+     * @return int
+     * @throws \Exception
+     * @throws \triagens\ArangoDb\ClientException
+     */
     public function count($q = '*', $db = null)
     {
         $this->select = '1';
@@ -657,18 +842,32 @@ class Query extends Component implements QueryInterface
         return $cursor->getFullCount();
     }
 
+    /**
+     * @param null $db
+     * @return bool
+     * @throws \Exception
+     */
     public function exists($db = null)
     {
         $record = $this->one($db);
         return !empty($record);
     }
 
+    /**
+     * @param callable|string $column
+     * @return $this|static
+     */
     public function indexBy($column)
     {
         $this->indexBy = $column;
         return $this;
     }
 
+    /**
+     * @param array|string $condition
+     * @param array $params
+     * @return $this|static
+     */
     public function where($condition, $params = [])
     {
         $this->where = $condition;
@@ -676,6 +875,11 @@ class Query extends Component implements QueryInterface
         return $this;
     }
 
+    /**
+     * @param array|string $condition
+     * @param array $params
+     * @return $this|static
+     */
     public function andWhere($condition, $params = [])
     {
         if ($this->where === null) {
@@ -687,6 +891,11 @@ class Query extends Component implements QueryInterface
         return $this;
     }
 
+    /**
+     * @param array|string $condition
+     * @param array $params
+     * @return $this|static
+     */
     public function orWhere($condition, $params = [])
     {
         if ($this->where === null) {
@@ -857,12 +1066,20 @@ class Query extends Component implements QueryInterface
         return $condition;
     }
 
+    /**
+     * @param array|string $columns
+     * @return $this|static
+     */
     public function orderBy($columns)
     {
         $this->orderBy = $this->normalizeOrderBy($columns);
         return $this;
     }
 
+    /**
+     * @param array|string $columns
+     * @return $this|static
+     */
     public function addOrderBy($columns)
     {
         $columns = $this->normalizeOrderBy($columns);
@@ -874,18 +1091,30 @@ class Query extends Component implements QueryInterface
         return $this;
     }
 
+    /**
+     * @param int $limit
+     * @return $this|static
+     */
     public function limit($limit)
     {
         $this->limit = $limit;
         return $this;
     }
 
+    /**
+     * @param int $offset
+     * @return $this|static
+     */
     public function offset($offset)
     {
         $this->offset = $offset;
         return $this;
     }
 
+    /**
+     * @param $columns
+     * @return array
+     */
     protected function normalizeOrderBy($columns)
     {
         if (is_array($columns)) {
@@ -942,12 +1171,20 @@ class Query extends Component implements QueryInterface
         return $this;
     }
 
+    /**
+     * @param $options
+     * @return $this
+     */
     public function options($options)
     {
         $this->options = $options;
         return $this;
     }
 
+    /**
+     * @param $options
+     * @return $this
+     */
     public function addOptions($options)
     {
         if (!empty($options)) {

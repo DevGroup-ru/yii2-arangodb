@@ -796,19 +796,23 @@ class Query extends Component implements QueryInterface
     public function prepareResult($rows)
     {
         $result = [];
-        if ($this->indexBy === null) {
-            foreach ($rows as $row) {
-                $result[] = $row->getAll();
+        if (isset($rows[0]) && $rows[0] instanceof Document) {
+            if ($this->indexBy === null) {
+                foreach ($rows as $row) {
+                    $result[] = $row->getAll();
+                }
+            } else {
+                foreach ($rows as $row) {
+                    if (is_string($this->indexBy)) {
+                        $key = $row->{$this->indexBy};
+                    } else {
+                        $key = call_user_func($this->indexBy, $row);
+                    }
+                    $result[$key] = $row->getAll();
+                }
             }
         } else {
-            foreach ($rows as $row) {
-                if (is_string($this->indexBy)) {
-                    $key = $row->{$this->indexBy};
-                } else {
-                    $key = call_user_func($this->indexBy, $row);
-                }
-                $result[$key] = $row->getAll();
-            }
+            $result = $rows;
         }
         return $result;
     }

@@ -51,7 +51,7 @@ class Connection extends Object
         try {
             Yii::info($token, 'devgroup\arangodb\Connection::open');
             Yii::beginProfile($token, 'devgroup\arangodb\Connection::open');
-            $this->connection = new ArangoDbConnection($this->connectionOptions);
+            $this->connection = new \triagens\ArangoDb\Connection($this->connectionOptions);
             $this->collectionHandler = new CollectionHandler($this->connection);
             $this->documentHandler = new DocumentHandler($this->connection);
             Yii::endProfile($token, 'devgroup\arangodb\Connection::open');

@@ -24,6 +24,7 @@ class Query extends Component implements QueryInterface
         'OR' => 'buildAndCondition',
         'IN' => 'buildInCondition',
         'LIKE' => 'buildLikeCondition',
+        'BETWEEN' => 'buildBetweenCondition',
     ];
 
     protected $conditionMap = [
@@ -434,6 +435,34 @@ class Query extends Component implements QueryInterface
     }
 
     /**
+     * Creates an SQL expressions with the `BETWEEN` operator.
+     * @param string $operator the operator to use
+     * @param array $operands the first operand is the column name. The second and third operands
+     * describe the interval that column value should be in.
+     * @param array $params the binding parameters to be populated
+     * @return string the generated AQL expression
+     * @throws InvalidParamException if wrong number of operands have been given.
+     */
+    public function buildBetweenCondition($operator, $operands, &$params)
+    {
+        if (!isset($operands[0], $operands[1], $operands[2])) {
+            throw new InvalidParamException("Operator '$operator' requires three operands.");
+        }
+
+        list($column, $value1, $value2) = $operands;
+
+        if (strpos($column, '(') === false) {
+            $column = $this->quoteColumnName($column);
+        }
+        $phName1 = self::PARAM_PREFIX . count($params);
+        $params[$phName1] = $value1;
+        $phName2 = self::PARAM_PREFIX . count($params);
+        $params[$phName2] = $value2;
+
+        return "$column >= @$phName1 && $column <= @$phName2";
+    }
+
+    /**
      * @param $operator
      * @param $condition
      * @param $params
@@ -574,12 +603,12 @@ class Query extends Component implements QueryInterface
         $search = [];
         $replace = [];
         foreach ($values as $key => $value) {
-            $search[] = "@$key";
+            $search[] = "/@\b$key\b/";
             $replace[] = is_string($value) ? "\"$value\"" : json_encode($value);
         }
 
         if (count($search)) {
-            $query = str_replace($search, $replace, $query);
+            $query = preg_replace($search, $replace, $query);
         }
 
         return $query;
@@ -1058,6 +1087,12 @@ class Query extends Component implements QueryInterface
             case 'IN':
             case 'LIKE':
                 if (array_key_exists(1, $condition) && $this->isEmpty($condition[1])) {
+                    return [];
+                }
+                break;
+            case 'BETWEEN':
+                if ((array_key_exists(1, $condition) && $this->isEmpty($condition[1]))
+                    || (array_key_exists(2, $condition) && $this->isEmpty($condition[2]))) {
                     return [];
                 }
                 break;

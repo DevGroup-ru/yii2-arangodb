@@ -551,11 +551,7 @@ class Query extends Component implements QueryInterface
 
         $names = '';
         foreach ($columns as $name => $column) {
-            if (is_int($name)) {
-                $names .= $column . ', ';
-            } else {
-                $names .= "\"$name\": $this->from.$column, ";
-            }
+            $names .= "\"$name\": $this->from.$column, ";
         }
 
         return 'RETURN {' . trim($names, ', ') . '}';

@@ -179,3 +179,7 @@ return [
     ...
 ];
 ```
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/DevGroup-ru/yii2-arangodb/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+

@@ -38,8 +38,10 @@ return [
         'arangodb' => [
             'class' => '\devgroup\arangodb\Connection',
             'connectionOptions' => [
-                ArangoConnectionOptions::OPTION_DATABASE => "mydatabase",
-                ArangoConnectionOptions::OPTION_ENDPOINT => 'tcp://127.0.0.1:8529',
+                triagens\ArangoDb\ConnectionOptions::OPTION_DATABASE => "mydatabase",
+                triagens\ArangoDb\ConnectionOptions::OPTION_ENDPOINT => 'tcp://127.0.0.1:8529',
+                //triagens\ArangoDb\ConnectionOptions::OPTION_AUTH_USER   => '',
+                //triagens\ArangoDb\ConnectionOptions::OPTION_AUTH_PASSWD => '',
             ],
         ],
     ],
@@ -177,3 +179,7 @@ return [
     ...
 ];
 ```
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/DevGroup-ru/yii2-arangodb/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+

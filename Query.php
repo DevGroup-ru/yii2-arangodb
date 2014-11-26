@@ -541,7 +541,7 @@ class Query extends Component implements QueryInterface
      */
     protected function buildSelect($columns, &$params)
     {
-        if ($columns == null || empty($columns)) {
+        if ($columns === null || empty($columns)) {
             return 'RETURN ' . $this->from;
         }
 

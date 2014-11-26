@@ -3,7 +3,6 @@
 namespace devgroup\arangodb;
 
 use Yii;
-use yii\base\ArrayableTrait;
 use yii\base\InvalidConfigException;
 use yii\db\ActiveQueryInterface;
 use yii\db\BaseActiveRecord;

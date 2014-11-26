@@ -5,7 +5,6 @@ namespace devgroup\arangodb\panels\arangodb;
 use devgroup\arangodb\panels\arangodb\models\ArangoDb;
 use Yii;
 use yii\debug\Panel;
-use yii\helpers\VarDumper;
 use yii\log\Logger;
 
 class ArangoDbPanel extends Panel

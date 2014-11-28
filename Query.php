@@ -1033,7 +1033,7 @@ class Query extends Component implements QueryInterface
      */
     protected function isEmpty($value)
     {
-        return $value === '' || $value === [] || $value === null || is_string($value) && trim($value) === '';
+        return $value === '' || $value === [] || $value === null || is_string($value) && (trim($value) === '' || trim($value, '%') === '');
     }
 
     /**

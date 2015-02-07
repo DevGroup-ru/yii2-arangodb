@@ -254,7 +254,7 @@ abstract class ActiveRecord extends BaseActiveRecord
         return \Yii::$app->get('arangodb');
     }
 
-    protected static function findByCondition($condition, $one)
+    protected static function findByCondition($condition)
     {
         /** @var ActiveQuery $query */
         $query = static::find();
@@ -270,7 +270,7 @@ abstract class ActiveRecord extends BaseActiveRecord
             }
         }
 
-        return $one ? $query->andWhere($condition)->one() : $query->andWhere($condition)->all();
+        return $query->andWhere($condition);
     }
 
     /**
